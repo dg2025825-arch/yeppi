@@ -26,8 +26,8 @@
 - 20116 윤서희: 학생들의 활동량에 따라 수면 효율이 어떻게 달라지는지 알아보고 싶었다.
 
 ## 데이터
-- 출처: Fitbit Fitness Tracker Data (arashnic), Kaggle, `Fitabase Data 4.12.16-5.12.16` 폴더, [접근일] 접근. https://www.kaggle.com/datasets/arashnic/fitbit
-- 원출처: Zenodo 공개 데이터 https://zenodo.org/record/53894 (Kaggle 페이지의 Sources 항목 기준)
+- 출처: Fitbit Fitness Tracker Data (arashnic), Kaggle, `Fitabase Data 4.12.16-5.12.16` 폴더, [접근일] 접근. https://www.kaggle.com/datasets/arashnic/fitbit/versions/1?resource=download&select=Fitabase+Data+4.12.16-5.12.16
+- 원출처: https://zenodo.org/record/53894#.X9oeh3Uzaao
 - 이용 조건: CC0: Public Domain
 - 사용 파일: `dailyActivity_merged.csv`, `sleepDay_merged.csv` + [추가 사용 시: hourlyIntensities, heartrate_seconds, minuteSleep]
 - 기간·행 수·열 수: 2016-04-12 ~ 2016-05-12 · 활동 33명 940행 15열 / 수면 24명 [ ]행 5열 / 병합 후 [ ]명 [ ]행
