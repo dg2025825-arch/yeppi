@@ -59,7 +59,7 @@ https://www.kaggle.com/datasets/arashnic/fitbit/versions/1?resource=download&sel
 - 20116 윤서희: 데이터 전처리 과정에서 중복값이나 이상치를 어떻게 처리하느냐에 따라 모델 성능이 크게 달라짐을 확인했으며, 생성형 AI를 활용해 분석 코드의 오류를 수정하고 구조화하는 법을 배웠습니다.
 
 ## 생성형 AI 활용 명시
-- 사용한 AI 모델(이름과 버전): OpenAI ChatGPT-4o / Google Gemini 1.5 Pro
+- 사용한 AI 모델(이름과 버전): OpenAI ChatGPT-4o / Google Gemini 1.5 Pro / Claude Sonnet 5.5
 - 사용한 곳 / 사용하지 않은 곳 / 검증 방법: 사용한 곳: EDA 및 GroupKFold 처리 파이썬 코드 초안 작성, 보고서 구조화 양식 다듬기 / 사용하지 않은 곳: 팀 고유의 주제 선정 이유, 분석 결과에 대한 팀원 자체 해석 및 인사이트 도출 / 검증 방법: AI가 제시한 코드 스크립트를 로컬 파이썬 환경(code/main.py)에서 직접 실행하여 출력 수치와 데이터 행 수를 교차 검증함 (거절 및 수정 기록은 log/에 기록)
 
 ## 참고문헌
