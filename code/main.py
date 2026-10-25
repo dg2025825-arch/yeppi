@@ -12,9 +12,9 @@ from sklearn.metrics import roc_curve, roc_auc_score, confusion_matrix, accuracy
 
 st.set_page_config(page_title="활동 패턴과 수면 부족", page_icon="😴", layout="wide")
 
-# ------------------------------------------------------------------
-# 1. 데이터 불러오기 및 전처리
-# ------------------------------------------------------------------
+ACT_NAME = "dailyActivity_merged.csv"
+SLEEP_NAME = "sleepDay_merged.csv"
+
 FEATURES = {
     "TotalSteps": "총 걸음 수",
     "VeryActiveMinutes": "고강도 활동(분)",
@@ -24,11 +24,29 @@ FEATURES = {
     "ActiveTotal": "활동 시간 합계(고+중강도, 분)",
 }
 
+# ------------------------------------------------------------------
+# 1. 데이터 불러오기
+# ------------------------------------------------------------------
+HERE = Path(__file__).resolve().parent      # .../code
+REPO_ROOT = HERE.parent                     # 저장소 최상위 (code, data가 있는 곳)
+
+
+def find_file(keyword):
+    """data 폴더 → 저장소 전체 → 현재 작업 폴더 순서로 CSV를 찾는다."""
+    search_dirs = [REPO_ROOT / "data", REPO_ROOT, HERE, Path.cwd()]
+    for d in search_dirs:
+        if not d.exists():
+            continue
+        for p in d.rglob("*.csv"):
+            if keyword.lower() in p.name.lower():
+                return p
+    return None
+
 
 @st.cache_data
-def load_data(act_file, sleep_file):
-    act = pd.read_csv(act_file)
-    sleep = pd.read_csv(sleep_file)
+def load_data(act_src, sleep_src):
+    act = pd.read_csv(act_src)
+    sleep = pd.read_csv(sleep_src)
 
     act["ActivityDate"] = pd.to_datetime(act["ActivityDate"], format="%m/%d/%Y")
     sleep["SleepDay"] = pd.to_datetime(
@@ -49,31 +67,37 @@ def load_data(act_file, sleep_file):
     return df
 
 
-def find_file(name):
-    base = Path(__file__).parent
-    for p in [base / name, base / "data" / name]:
-        if p.exists():
-            return p
-    return None
+def get_data():
+    act_path = find_file("dailyactivity")
+    sleep_path = find_file("sleepday")
+    if act_path is not None and sleep_path is not None:
+        return load_data(str(act_path), str(sleep_path)), f"{act_path.parent.name}/ 폴더 ({act_path.name}, {sleep_path.name})"
 
-
-act_path = find_file("dailyActivity_merged.csv")
-sleep_path = find_file("sleepDay_merged.csv")
-
-if act_path is None or sleep_path is None:
-    st.warning("CSV 파일을 찾지 못했습니다. 직접 업로드해 주세요.")
-    up_act = st.file_uploader("dailyActivity_merged.csv", type="csv")
-    up_sleep = st.file_uploader("sleepDay_merged.csv", type="csv")
+    # 못 찾았을 때: 진단 정보 + 직접 업로드
+    st.error("저장소에서 CSV 파일을 찾지 못했습니다. 아래 정보를 확인하거나 직접 올려 주세요.")
+    with st.expander("🔎 앱이 보고 있는 폴더와 파일 목록", expanded=True):
+        st.write("main.py 위치:", str(HERE))
+        st.write("저장소 최상위로 추정한 위치:", str(REPO_ROOT))
+        files = sorted(
+            str(p.relative_to(REPO_ROOT)) for p in REPO_ROOT.rglob("*")
+            if p.is_file() and ".git" not in p.parts
+        )
+        st.write(files if files else "파일이 없습니다.")
+    up_act = st.file_uploader(f"{ACT_NAME} 업로드", type="csv")
+    up_sleep = st.file_uploader(f"{SLEEP_NAME} 업로드", type="csv")
     if up_act is None or up_sleep is None:
         st.stop()
-    raw = load_data(up_act, up_sleep)
-else:
-    raw = load_data(act_path, sleep_path)
+    return load_data(up_act, up_sleep), "직접 업로드"
+
+
+raw, source = get_data()
 
 # ------------------------------------------------------------------
 # 2. 사이드바 설정
 # ------------------------------------------------------------------
 st.sidebar.header("⚙️ 분석 설정")
+st.sidebar.caption(f"📂 데이터 출처: {source}")
+
 threshold = st.sidebar.slider(
     "수면 부족 기준 (분 미만)", 300, 480, 420, 10,
     help="420분 = 7시간. 이 값보다 적게 자면 '수면 부족'으로 분류합니다."
@@ -109,7 +133,7 @@ chart_options = [
     "1. 수면 시간 분포 (히스토그램)",
     "2. 활동 vs 다음 날 수면 (산점도 + 추세선)",
     "3. 수면 부족 그룹별 활동 비교 (박스플롯)",
-    "4. 걸음 수 구간별 수면 부족 비율 (막대그래프)",
+    "4. 활동량 구간별 수면 부족 비율 (막대그래프)",
     "5. 변수 간 상관관계 (히트맵)",
     "6. 참가자별 비교 (평균 활동 vs 평균 수면)",
     "7. 개인별 시계열 (활동과 수면 함께 보기)",
@@ -121,8 +145,7 @@ st.markdown("---")
 # ---------------- 1. 히스토그램 ----------------
 if choice == chart_options[0]:
     fig = px.histogram(
-        df, x="TotalMinutesAsleep", nbins=30,
-        color="그룹",
+        df, x="TotalMinutesAsleep", nbins=30, color="그룹",
         color_discrete_map={"수면 부족": "#EF553B", "충분한 수면": "#636EFA"},
         labels={"TotalMinutesAsleep": "수면 시간(분)"},
         title="다음 날 수면 시간 분포",
@@ -147,7 +170,6 @@ elif choice == chart_options[1]:
         hover_data=["Id", "ActivityDate"],
         title=f"{FEATURES[feat]} vs 다음 날 수면 시간",
     )
-    # 추세선 (numpy)
     x, y = df[feat].values, df["TotalMinutesAsleep"].values
     slope, intercept = np.polyfit(x, y, 1)
     xs = np.linspace(x.min(), x.max(), 100)
@@ -254,7 +276,6 @@ elif choice == chart_options[6]:
     fig.add_trace(go.Scatter(x=p["ActivityDate"], y=p["TotalMinutesAsleep"],
                              name="다음 날 수면(분)", mode="lines+markers",
                              line=dict(color="crimson"), yaxis="y2"))
-    fig.add_hline(y=threshold, line_dash="dot", line_color="gray", yref="y2")
     fig.update_layout(
         title=f"참가자 {pid}: 활동일 기준 활동량(막대)과 그 다음 날 수면(선)",
         yaxis=dict(title=FEATURES[feat]),
@@ -281,7 +302,6 @@ elif choice == chart_options[7]:
     else:
         X, y, groups = df[sel], df["수면부족"], df["Id"]
 
-        # 같은 사람의 데이터가 학습/검증에 섞이지 않도록 사람 단위로 분할
         model = make_pipeline(
             StandardScaler(),
             LogisticRegression(class_weight="balanced", max_iter=1000),
@@ -321,7 +341,6 @@ elif choice == chart_options[7]:
             )
             st.plotly_chart(fig_cm, use_container_width=True)
 
-        # 계수 (어떤 변수가 영향이 큰가)
         model.fit(X, y)
         coef = pd.DataFrame({
             "변수": [FEATURES[s] for s in sel],
@@ -347,4 +366,4 @@ with st.expander("⚠️ 이 분석의 한계 (결론 내리기 전에 꼭 읽�
 - **기기 착용 여부.** 기기를 안 찬 날은 활동이 낮게 기록됩니다. (사이드바에서 제외 가능)
 - **참가자 차이.** 사람마다 기본 수면 패턴이 다르므로 개인차가 결과를 흐릴 수 있습니다.
         """
-    )
+    )                    
