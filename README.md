@@ -18,7 +18,7 @@
 - 출처(주소): Kaggle Fitbit Fitness Tracker Data (arashnic), Kaggle, Fitabase Data 4.12.16-5.12.16 폴더, 접근일 2026-10-23, 
 https://www.kaggle.com/datasets/arashnic/fitbit/versions/1?resource=download&select=Fitabase+Data+4.12.16-5.12.16
 (원출처:https://zenodo.org/record/53894#.X9oeh3Uzaao)
-- 기간·행 수·열 수: 2016-04-12 ~ 2016-05-12 · 활동 33명 940행 15열 / 수면 24명 [ ]행 5열 / 병합 후 [ ]명 [ ]행
+- 기간·행 수·열 수: 2016-04-12 ~ 2016-05-12 · 활동 33명 940행 15열 / 수면 24명 12행 열 / 병합 후 16명 행
 - 사용한 열: 입력은 VeryActiveMinutes(고강도 시간), FairlyActiveMinutes(중강도 시간), LightlyActiveMinutes(저강도 시간), SedentaryMinutes(좌식 시간), TotalSteps(걸음 수). 예측할 값은 수면 부족 여부(TotalMinutesAsleep 기준)
 - 개인 단위 정보 없음 확인: 예
 
@@ -29,7 +29,7 @@ https://www.kaggle.com/datasets/arashnic/fitbit/versions/1?resource=download&sel
 1. 데이터 수집 Kaggle의 Fitbit 데이터 중 dailyActivity_merged.csv(33명 940행)와 sleepDay_merged.csv(24명 [ ]행)를 받아 열 이름과 날짜 형식을 확인함. 질문에 필요한 열이 있는지 먼저 보려고
 2. 변수 선택 정답은 다음 날 수면 360분 미만이면 1(부족), 아니면 0(충분). 입력은 전날 활동 5개(고강도·중강도·저강도·좌식 시간, 걸음 수). 질문과 직접 관련된 변수만 쓰려고
 3. 전처리 수면 중복 3행 삭제, 걸음 0이고 좌식 1440분인 날(기기 미착용 추정) 제외 [ ]행, 수면 180분 미만(낮잠·부분 기록 추정) 제외 [ ]행. 전날 활동과 다음 날 수면을 Id와 날짜로 연결. 최종 [ ]명 [ ]행. 미착용·부분 기록이 결과를 왜곡하지 않게
-4. 분할 사용자 단위로 나눔(GroupKFold [ ]겹). 같은 사람의 여러 날이 학습과 검증에 섞이면 성능이 부풀기 때문
+4. 분할 사용자 단위로 나눔(GroupKFold 겹). 같은 사람의 여러 날이 학습과 검증에 섞이면 성능이 부풀기 때문
 5. 기준선 모두 "충분"으로 찍는 모델. 정확도 [ ], 재현율 [ ]. 모델이 의미 있는지 비교할 바닥선이 필요해서
 6. 후보 모델 비교 로지스틱 회귀·결정 트리·랜덤 포레스트를 같은 전처리·같은 분할로 실행. 한 모델만으로는 "최선"이라 말할 수 없어서
 7. 선택 [점수 / 안정성 / 설명 가능성 중 무엇을 기준으로 했는가, 이유]
@@ -55,9 +55,9 @@ https://www.kaggle.com/datasets/arashnic/fitbit/versions/1?resource=download&sel
 - 진로 분야: 바이오헬스케어, 디지털 헬스케어 데이터 분석, 스포츠 생체역학
 
 ## 느끼고 배운 점 (AI 활용 · 데이터 분석)
-- 20223 정서진: 단순히 수치화된 데이터만으로 인간의 복잡한 생리 현상인 수면을 단정하기 어렵다는 점을 배웠고, GroupKFold와 같이 데이터의 특성을 고려한 전처리와 검증 방식의 중요성을 깨달았습니다.
-- 20102 김민서: 신체 움직임과 수면 간의 정량적 관계를 직접 확인하면서 춤과 신체 활동 후 회복 과정에 대한 과학적 시각을 넓힐 수 있었고, AI를 활용해 가설을 검증하는 과정을 익혔습니다.
-- 20116 윤서희: 데이터 전처리 과정에서 중복값이나 이상치를 어떻게 처리하느냐에 따라 모델 성능이 크게 달라짐을 확인했으며, 생성형 AI를 활용해 분석 코드의 오류를 수정하고 구조화하는 법을 배웠습니다.
+- 20223 정서진: 
+- 20102 김민서: 
+- 20116 윤서희:
 
 ## 생성형 AI 활용 명시
 - 사용한 AI 모델(이름과 버전): OpenAI ChatGPT-4o / Google Gemini 1.5 Pro / Claude Sonnet 5.5
