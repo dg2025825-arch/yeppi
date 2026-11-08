@@ -3,6 +3,8 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.express as px
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 from sklearn.base import clone
 from sklearn.model_selection import GroupShuffleSplit
 from sklearn.linear_model import LogisticRegression
@@ -32,9 +34,11 @@ SLEEP_PATH = os.path.join(DATA_DIR, "sleepDay_merged.csv")
 FEATURES = ["TotalSteps", "VeryActiveMinutes", "FairlyActiveMinutes",
             "LightlyActiveMinutes", "SedentaryMinutes"]
 METRICS = ["정확도", "정밀도", "재현율", "F1", "AUC", "균형정확도"]
+MAIN_METRICS = ["정확도", "정밀도", "재현율", "F1"]
 
 BASELINES = ["Dummy(다수 클래스)", "로지스틱 회귀"]
 CANDIDATES = ["랜덤 포레스트", "그래디언트 부스팅", "KNN"]
+ALL_MODELS = BASELINES + CANDIDATES
 
 
 def get_models():
@@ -188,10 +192,10 @@ if valid_splits == 0:
 
 rep = pd.DataFrame(rep_rows)
 mean_df = rep.groupby("모델")[METRICS].mean()
-std_df = rep.groupby("모델")[METRICS].std()
+std_df = rep.groupby("모델")[METRICS].std().fillna(0)
 
 summary = mean_df.copy().round(3).astype(str) + " ± " + std_df.round(3).astype(str)
-summary = summary.loc[BASELINES + CANDIDATES].reset_index()
+summary = summary.loc[ALL_MODELS].reset_index()
 summary.insert(0, "구분", ["베이스라인"] * len(BASELINES) + ["후보"] * len(CANDIDATES))
 
 st.subheader(f"📊 ② 반복 분할 결과 (유효 분할 {valid_splits}회, 평균 ± 표준편차)")
@@ -202,22 +206,80 @@ st.caption("같은 분할에서 모든 모델이 시험을 봤어요. ±는 분�
 # 그래프
 # ----------------------------
 st.subheader("📈 결과 그래프")
-long_mean = mean_df.loc[BASELINES + CANDIDATES].reset_index().melt(
+
+# (1) 전체 지표 한 번에 보기
+long_mean = mean_df.loc[ALL_MODELS].reset_index().melt(
     id_vars="모델", var_name="지표", value_name="점수")
 st.plotly_chart(
     px.bar(long_mean, x="지표", y="점수", color="모델", barmode="group",
-           category_orders={"모델": BASELINES + CANDIDATES},
-           title="지표별 평균 점수 (반복 분할)", range_y=[0, 1]),
+           category_orders={"모델": ALL_MODELS},
+           title="① 지표별 평균 점수 (반복 분할)", range_y=[0, 1]),
     use_container_width=True,
 )
 
-st.plotly_chart(
-    px.box(rep, x="모델", y="AUC", color="모델", points="all",
-           category_orders={"모델": BASELINES + CANDIDATES},
-           title="분할마다 AUC가 얼마나 흔들리는가 (0.5 = 동전 던지기)")
-    .add_hline(y=0.5, line_dash="dash"),
-    use_container_width=True,
-)
+# (2) 정확도 / 정밀도 / 재현율 / F1 각각 비교 (오차막대 포함)
+st.markdown("#### ② 정확도 · 정밀도 · 재현율 · F1 개별 비교 (막대 위 선 = 표준편차)")
+fig_sub = make_subplots(rows=2, cols=2, subplot_titles=MAIN_METRICS,
+                        vertical_spacing=0.18)
+colors = px.colors.qualitative.Plotly
+color_map = {m: colors[i % len(colors)] for i, m in enumerate(ALL_MODELS)}
+
+for idx, metric in enumerate(MAIN_METRICS):
+    r_, c_ = idx // 2 + 1, idx % 2 + 1
+    for m in ALL_MODELS:
+        fig_sub.add_trace(
+            go.Bar(
+                x=[m], y=[mean_df.loc[m, metric]],
+                error_y=dict(type="data", array=[std_df.loc[m, metric]]),
+                marker_color=color_map[m],
+                name=m, legendgroup=m,
+                showlegend=(idx == 0),
+                text=[f"{mean_df.loc[m, metric]:.2f}"], textposition="outside",
+            ),
+            row=r_, col=c_,
+        )
+    fig_sub.update_yaxes(range=[0, 1.15], row=r_, col=c_)
+    fig_sub.update_xaxes(showticklabels=False, row=r_, col=c_)
+
+fig_sub.update_layout(height=650, title_text="지표별 모델 비교 (평균 ± 표준편차)")
+st.plotly_chart(fig_sub, use_container_width=True)
+
+# (3) 레이더 차트 + 정밀도-재현율 산점도
+col1, col2 = st.columns(2)
+
+with col1:
+    radar_metrics = MAIN_METRICS
+    fig_radar = go.Figure()
+    for m in ALL_MODELS:
+        vals = [mean_df.loc[m, k] for k in radar_metrics]
+        fig_radar.add_trace(go.Scatterpolar(
+            r=vals + [vals[0]], theta=radar_metrics + [radar_metrics[0]],
+            fill="toself", name=m, opacity=0.5))
+    fig_radar.update_layout(
+        polar=dict(radialaxis=dict(visible=True, range=[0, 1])),
+        title="③ 레이더 차트 (모델별 지표 모양)")
+    st.plotly_chart(fig_radar, use_container_width=True)
+
+with col2:
+    pr_df = mean_df.loc[ALL_MODELS, ["정밀도", "재현율", "F1"]].reset_index()
+    fig_pr = px.scatter(
+        pr_df, x="재현율", y="정밀도", color="모델", size="F1",
+        text="모델", range_x=[-0.05, 1.05], range_y=[-0.05, 1.05],
+        title="④ 정밀도-재현율 균형 (점 크기 = F1)")
+    fig_pr.update_traces(textposition="top center")
+    st.plotly_chart(fig_pr, use_container_width=True)
+
+# (4) 지표 선택 박스플롯
+st.markdown("#### ⑤ 분할마다 점수가 얼마나 흔들리는가")
+sel_metric = st.selectbox("확인할 지표를 고르세요", METRICS,
+                          index=METRICS.index("AUC"))
+fig_box = px.box(rep, x="모델", y=sel_metric, color="모델", points="all",
+                 category_orders={"모델": ALL_MODELS},
+                 title=f"분할마다 {sel_metric}이(가) 흔들리는 정도")
+if sel_metric == "AUC":
+    fig_box.add_hline(y=0.5, line_dash="dash",
+                      annotation_text="0.5 = 동전 던지기")
+st.plotly_chart(fig_box, use_container_width=True)
 
 # ----------------------------
 # 해석 ① 지표가 우리 데이터에서 의미하는 것
