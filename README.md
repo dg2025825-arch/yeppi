@@ -23,7 +23,7 @@ https://www.kaggle.com/datasets/arashnic/fitbit/versions/1?resource=download&sel
 - 개인 단위 정보 없음 확인: 예
 
 ## 방법
--데이터 수집: Kaggle Fitbit Fitness Tracker Data(arashnic)의 dailyActivity_merged.csv, sleepDay_merged.csv를 CSV로 받음 · 2016-04-12~05-12 · 활동 33명 864행 7열 · 수면 24명 411행 4열
+1.데이터 수집: Kaggle Fitbit Fitness Tracker Data(arashnic)의 dailyActivity_merged.csv, sleepDay_merged.csv를 CSV로 받음 · 2016-04-12~05-12 · 활동 33명 864행 7열 · 수면 24명 411행 4열
 변수 선택: 입력은 하루 활동 변수 다섯 개(걸음 수 · 고강도 · 중강도 · 저강도 · 좌식 시간), 정답은 다음 날 TotalMinutesAsleep으로 만든 수면 부족/충분 · TotalSleepRecords는 질문("하루 활동만")
 3. 전처리: 결측치 [0 또는 N]건 처리 · 범주형 변수 인코딩 및 연속형 변수 스케일링 적용 · 클래스 불균형([수면 부족 N명 / 충분 M명]) 확인
 4. 분할: 학습 [N]명 · 시험 [M]명([비율, 예: 20%]) · 수면 부족/충분 비율을 학습·시험에 동일하게 맞춤 · 분할 난수 42
