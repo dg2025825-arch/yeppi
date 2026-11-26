@@ -23,8 +23,8 @@ https://www.kaggle.com/datasets/arashnic/fitbit/versions/1?resource=download&sel
 - 개인 단위 정보 없음 확인: 예
 
 ## 방법
-분류 사용. 다음 날 수면 부족 여부를 부족 또는 충분 두 범주로 예측하는 이진 범주 문제이므로 분류를 사용했다.
-
+-데이터 수집: Kaggle Fitbit Fitness Tracker Data(arashnic)의 dailyActivity_merged.csv, sleepDay_merged.csv를 CSV로 받음 · 2016-04-12~05-12 · 활동 33명 864행 7열 · 수면 24명 411행 4열
+변수 선택: 입력은 하루 활동 변수 다섯 개(걸음 수 · 고강도 · 중강도 · 저강도 · 좌식 시간), 정답은 다음 날 TotalMinutesAsleep으로 만든 수면 부족/충분 · TotalSleepRecords는 질문("하루 활동만") 밖이라 입력에서 제외
 
 ## 결과 해석 (팀이 씁니다)
 - 사용한 지표와 수치: 균형 정확도 0.54 , 재현율  0.44, 정밀도 0.46, F1-Score 0.44
